@@ -1,11 +1,16 @@
 package com.felipe.ms_authN_authZ_labcenter.controllers;
 
 import com.felipe.ms_authN_authZ_labcenter.dtos.LoginRequestDTO;
+import com.felipe.ms_authN_authZ_labcenter.dtos.LoginResponseDTO;
+import com.felipe.ms_authN_authZ_labcenter.entities.User;
+import com.felipe.ms_authN_authZ_labcenter.entities.UserRole;
 import com.felipe.ms_authN_authZ_labcenter.repositories.UserRepository;
+import com.felipe.ms_authN_authZ_labcenter.services.JWTTokenService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,23 +21,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/auth")
 public class AuthenticationController {
 
-    private AuthenticationManager authenticationManager;
-    private UserRepository userRepository;
-    private PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JWTTokenService jwtTokenService;
 
     public AuthenticationController(AuthenticationManager authenticationManager,
-                                    UserRepository userRepository,
-                                    PasswordEncoder passwordEncoder) {
+                                    JWTTokenService jwtTokenService) {
         this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.jwtTokenService = jwtTokenService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody LoginRequestDTO data) {
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO data) {
         var usernameToken = new UsernamePasswordAuthenticationToken(data.username(), data.password());
-        authenticationManager.authenticate(usernameToken);
+        Authentication authentication = authenticationManager.authenticate(usernameToken);
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        final String tokenJwt = jwtTokenService.generateToken((User) authentication.getPrincipal());
+        final UserRole userRole = ((User) authentication.getPrincipal()).getRole();
+
+        LoginResponseDTO responseBody = new LoginResponseDTO(tokenJwt, userRole);
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseBody);
     }
 }
