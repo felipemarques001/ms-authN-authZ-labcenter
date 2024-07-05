@@ -2,44 +2,31 @@ package com.felipe.ms_authN_authZ_labcenter.controllers;
 
 import com.felipe.ms_authN_authZ_labcenter.dtos.LoginRequestDTO;
 import com.felipe.ms_authN_authZ_labcenter.dtos.LoginResponseDTO;
-import com.felipe.ms_authN_authZ_labcenter.entities.User;
-import com.felipe.ms_authN_authZ_labcenter.entities.UserRole;
-import com.felipe.ms_authN_authZ_labcenter.repositories.UserRepository;
-import com.felipe.ms_authN_authZ_labcenter.services.JWTTokenService;
+import com.felipe.ms_authN_authZ_labcenter.services.AuthenticationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("authentication")
 public class AuthenticationController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JWTTokenService jwtTokenService;
+    private final AuthenticationService service;
 
-    public AuthenticationController(AuthenticationManager authenticationManager,
-                                    JWTTokenService jwtTokenService) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenService = jwtTokenService;
+    public AuthenticationController(AuthenticationService authenticationService){
+        service = authenticationService;
     }
 
-    @PostMapping("/login")
+    @PostMapping("login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginRequestDTO data) {
-        var usernameToken = new UsernamePasswordAuthenticationToken(data.username(), data.password());
-        Authentication authentication = authenticationManager.authenticate(usernameToken);
-
-        final String tokenJwt = jwtTokenService.generateToken((User) authentication.getPrincipal());
-        final UserRole userRole = ((User) authentication.getPrincipal()).getRole();
-
-        LoginResponseDTO responseBody = new LoginResponseDTO(tokenJwt, userRole);
-
+        LoginResponseDTO responseBody = service.loginUser(data);
         return ResponseEntity.status(HttpStatus.OK).body(responseBody);
+    }
+
+    @GetMapping
+    public ResponseEntity<Void> authenticateUser() {
+        // A pilha de execução do código só vai
+        // chegar aqui se o usuário conseguir se autenticar com o token enviado
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

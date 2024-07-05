@@ -5,6 +5,8 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.felipe.ms_authN_authZ_labcenter.entities.User;
+import com.felipe.ms_authN_authZ_labcenter.exceptions.JwtTokenCreationException;
+import com.felipe.ms_authN_authZ_labcenter.exceptions.JwtTokenInvalidException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -26,11 +28,11 @@ public class JWTTokenService {
                     .withExpiresAt(generateExpirationDate())
                     .sign(ALGORITHM);
         } catch (JWTCreationException exception) {
-            throw new RuntimeException("Error while generating JWT token", exception);
+            throw new JwtTokenCreationException();
         }
     }
 
-    public String validateTokenAndGetLogin(String token) {
+    public String validateTokenAndGetUsername(String token) {
         try {
             return JWT.require(ALGORITHM)
                     .withIssuer(ISSUER)
@@ -38,7 +40,7 @@ public class JWTTokenService {
                     .verify(token)
                     .getSubject();
         } catch (JWTVerificationException exception) {
-            return null;
+            throw new JwtTokenInvalidException();
         }
     }
 
